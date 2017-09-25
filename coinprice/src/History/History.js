@@ -1,10 +1,11 @@
- import React, { Component } from 'react';
-    import './History.css'
-    import axios from 'axios'
-    import moment from 'moment'
+import React, { Component } from 'react';
+import './History.css'
+import axios from 'axios'
+import moment from 'moment'
+import {SectionBox} from "./SectionBox";
 
-  class History extends Component {
-      constructor () {
+class History extends Component {
+    constructor () {
         super();
         this.state = {
             todayprice: {},
@@ -12,200 +13,96 @@
             twodaysprice: {},
             threedaysprice: {},
             fourdaysprice: {}
-        }
+        };
+        /** Let's use arrow functions instead of using bind
         this.getBTCPrices = this.getBTCPrices.bind(this);
         this.getETHPrices = this.getETHPrices.bind(this);
         this.getLTCPrices = this.getLTCPrices.bind(this);
-      }
-      // This function gets the ETH price for a specific timestamp/date. The date is passed in as an argument
-      
-      getETHPrices (date) {
-          return axios.get('https://min-api.cryptocompare.com/data/pricehistorical?fsym=ETH&tsyms=USD&ts=' + date);
-      }
-      // This function gets the BTC price for a specific timestamp/date. The date is passed in as an argument
-      getBTCPrices (date) {
-          return axios.get('https://min-api.cryptocompare.com/data/pricehistorical?fsym=BTC&tsyms=USD&ts=' + date);
-      }
-      // This function gets the LTC price for a specific timestamp/date. The date is passed in as an argument
-      getLTCPrices (date) {
-          return axios.get('https://min-api.cryptocompare.com/data/pricehistorical?fsym=LTC&tsyms=USD&ts=' + date);
-      }
-   
+         **/
+    }
 
- // This function gets the prices for the current date.
-    getTodayPrice () {
-        // Get today's date in timestamp
-        let t = moment().unix()
-        // axios.all is used to make concurrent API requests. These requests were the functions we first created and they accept an argument of the date required.
-        axios.all([this.getETHPrices(t), this.getBTCPrices(t), this.getLTCPrices(t)])
+    /**
+     * Let's create utilitary functions to keep our code D.R.Y.
+     */
+
+    saveStateToLocalStorage = () => {
+        localStorage.setItem('history-state', JSON.stringify(this.state));
+    };
+
+    restoreStateFromLocalStorage = () => {
+        const state = JSON.parse(localStorage.getItem('today-state'));
+        console.log(state);
+        this.setState(state);
+    };
+
+    getPriceForDay = (daysCount = 0, key) => {
+        const time = moment().subtract(daysCount, 'days').unix();
+        axios.all([this.getETHPrices(time), this.getBTCPrices(time), this.getLTCPrices(time)])
             .then(axios.spread((eth, btc, ltc) => {
+                /** Have clear names for your variables, what is f supposed to be? **/
                 let f = {
-                    date: moment.unix(t).format("MMMM Do YYYY"),
+                    date: moment.unix(time).format("MMMM Do YYYY"),
                     eth: eth.data.ETH.USD,
                     btc: btc.data.BTC.USD,
                     ltc: ltc.data.LTC.USD
-                }
-                // Set the state of todayprice to the content of the object f
-                this.setState({ todayprice: f });
+                };
+                this.setState({
+                    [key]: f
+                }, this.saveStateToLocalStorage);
             }));
-    }
-    // This function gets the prices for the yesterday.
-    getYesterdayPrice () {
-        // Get yesterday's date in timestamp
-        let t = moment().subtract(1, 'days').unix();
-        // axios.all is used to make concurrent API requests. These requests were the functions we first created and they accept an argument of the date required.
-        axios.all([this.getETHPrices(t), this.getBTCPrices(t), this.getLTCPrices(t)])
-            .then(axios.spread((eth, btc, ltc) => {
-                let f = {
-                    date: moment.unix(t).format("MMMM Do YYYY"),
-                    eth: eth.data.ETH.USD,
-                    btc: btc.data.BTC.USD,
-                    ltc: ltc.data.LTC.USD
-                }
-                // Set the state of yesterdayprice to the content of the object f
-                this.setState({ yesterdayprice: f });
-            }));
-    }
-    // This function gets the prices for the two days ago.
-    getTwoDaysPrice () {
-        // Get the date for two days ago in timestamp
-        let t = moment().subtract(2, 'days').unix();
-        // axios.all is used to make concurrent API requests. These requests were the functions we first created and they accept an argument of the date required.
-        axios.all([this.getETHPrices(t), this.getBTCPrices(t), this.getLTCPrices(t)])
-            .then(axios.spread((eth, btc, ltc) => {
-                let f = {
-                    date: moment.unix(t).format("MMMM Do YYYY"),
-                    eth: eth.data.ETH.USD,
-                    btc: btc.data.BTC.USD,
-                    ltc: ltc.data.LTC.USD
-                }
-                // Set the state of twodaysprice to the content of the object f
-                this.setState({ twodaysprice: f });
-            }));
-    }
-    // This function gets the prices for the three days ago.
-    getThreeDaysPrice () {
-        // Get the date for three days ago in timestamp
-        let t = moment().subtract(3, 'days').unix();
-        // axios.all is used to make concurrent API requests. These requests were the functions we first created and they accept an argument of the date required.
-        axios.all([this.getETHPrices(t), this.getBTCPrices(t), this.getLTCPrices(t)])
-            .then(axios.spread((eth, btc, ltc) => {
-                let f = {
-                    date: moment.unix(t).format("MMMM Do YYYY"),
-                    eth: eth.data.ETH.USD,
-                    btc: btc.data.BTC.USD,
-                    ltc: ltc.data.LTC.USD
-                }
-                // Set the state of threedaysprice to the content of the object f
-                this.setState({ threedaysprice: f });
-            }));
-    }
-    // This function gets the prices for the four days ago.
-    getFourDaysPrice () {
-        // Get the date for four days ago in timestamp
-        let t = moment().subtract(4, 'days').unix();
-        // axios.all is used to make concurrent API requests. These requests were the functions we first created and they accept an argument of the date required.
-        axios.all([this.getETHPrices(t), this.getBTCPrices(t), this.getLTCPrices(t)])
-            .then(axios.spread((eth, btc, ltc) => {
-                let f = {
-                    date: moment.unix(t).format("MMMM Do YYYY"),
-                    eth: eth.data.ETH.USD,
-                    btc: btc.data.BTC.USD,
-                    ltc: ltc.data.LTC.USD
-                }
-                // Set the state of fourdaysprice to the content of the object f
-                this.setState({ fourdaysprice: f });
-            }));
-    }
-    // This is called when an instance of a component is being created and inserted into the DOM.
-    componentWillMount () {
+    };
+
+    getCurrencyPrice = (date, currency) =>
+        axios.get(`https://min-api.cryptocompare.com/data/pricehistorical?fsym=${currency}&tsyms=USD&ts=${date}`);
+
+    getETHPrices = (date) => this.getCurrencyPrice(date, 'ETH');
+    getBTCPrices = (date) => this.getCurrencyPrice(date, 'BTC');
+    getLTCPrices = (date) => this.getCurrencyPrice(date, 'LTC');
+
+    /**
+     * Now we can define all those functions like this ! :-)
+     * Or ... we can do it programmaticaly like below
+    getTodayPrice = () => this.getPriceForDay(0, 'todayprice');
+    getYesterdayPrice = () => this.getPriceForDay(1, 'yesterdayprice');
+    getTwoDaysPrice = () => this.getPriceForDay(2, 'twodaysprice');
+    getThreeDaysPrice = () => this.getPriceForDay(3, 'threedaysprice');
+    getFourDaysPrice = () => this.getFourDaysPrice(4, 'fourdaysprice');**/
+
+    componentDidMount () {
+        if (!navigator.onLine) {
+            this.restoreStateFromLocalStorage();
+        }
+        const days = ['today', 'yesterday', 'twodays', 'threedays', 'fourdays'];
+        for(const day in days){
+            this.getPriceForDay(day, `${days[day]}price`);
+        }
+        /** We can simplify it but.. Thats just a style thing aswell
         this.getTodayPrice();
         this.getYesterdayPrice();
         this.getTwoDaysPrice();
         this.getThreeDaysPrice();
-        this.getFourDaysPrice();
+        this.getFourDaysPrice();**/
     }
-
-        render() {
-            return (
-                <div className="history--section container">
-                    <h2>History (Past 5 days)</h2>
-                    <div className="history--section__box">
-                        <div className="history--section__box__inner">
-                            <h4>{this.state.todayprice.date}</h4>
-                            <div className="columns">
-                                <div className="column">
-                                    <p>1 BTC = ${this.state.todayprice.btc}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 ETH = ${this.state.todayprice.eth}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 LTC = ${this.state.todayprice.ltc}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="history--section__box__inner">
-                            <h4>{this.state.yesterdayprice.date}</h4>
-                            <div className="columns">
-                                <div className="column">
-                                    <p>1 BTC = ${this.state.yesterdayprice.btc}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 ETH = ${this.state.yesterdayprice.eth}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 LTC = ${this.state.yesterdayprice.ltc}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="history--section__box__inner">
-                            <h4>{this.state.twodaysprice.date}</h4>
-                            <div className="columns">
-                                <div className="column">
-                                    <p>1 BTC = ${this.state.twodaysprice.btc}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 ETH = ${this.state.twodaysprice.eth}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 LTC = ${this.state.twodaysprice.ltc}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="history--section__box__inner">
-                            <h4>{this.state.threedaysprice.date}</h4>
-                            <div className="columns">
-                                <div className="column">
-                                    <p>1 BTC = ${this.state.threedaysprice.btc}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 ETH = ${this.state.threedaysprice.eth}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 LTC = ${this.state.threedaysprice.ltc}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="history--section__box__inner">
-                            <h4>{this.state.fourdaysprice.date}</h4>
-                            <div className="columns">
-                                <div className="column">
-                                    <p>1 BTC = ${this.state.fourdaysprice.btc}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 ETH = ${this.state.fourdaysprice.eth}</p>
-                                </div>
-                                <div className="column">
-                                    <p>1 LTC = ${this.state.fourdaysprice.ltc}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
+    render() {
+        /**
+         * By creating components and extracting the variable at the top here, we created a much cleaner
+         * version of it ! :-)
+         */
+        const {todayprice, yesterdayprice, twodaysprice, threedaysprice, fourdaysprice} = this.state;
+        console.log(this.state);
+        return (
+            <div className="history--section container">
+                <h2>History (Past 5 days)</h2>
+                <div className="history--section__box">
+                    <SectionBox price={todayprice}/>
+                    <SectionBox price={yesterdayprice}/>
+                    <SectionBox price={twodaysprice}/>
+                    <SectionBox price={threedaysprice}/>
+                    <SectionBox price={fourdaysprice}/>
                 </div>
-            )
-        }
+            </div>
+        )
     }
+}
 
-    export default History;
+export default History;
